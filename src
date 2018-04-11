@@ -1,0 +1,74 @@
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform float u_time;
+uniform vec2 u_mouse;
+uniform vec2 u_resolution;
+
+vec2 coord;
+void lighter(vec2 c, float a, float b);
+void light();
+
+float rand(float x){
+    return fract(sin(x)*1e5);
+}
+
+float noise(float angle){
+    angle+=u_time*4.;
+    float i = floor(angle);
+    float f = fract(angle);
+    
+    float t = mix(rand(i), rand(i+1.), smoothstep(0., 1., f));
+    //smoothstep대신 아래 2 연산 써주면 더 빠르다.
+    //y = x*x*(3.0-2.0*x); -> 얘는 smoothstep과 모양이 똑같고
+    //y = x*x*x*(x*(x*6.-15.)+10.); -> 얘는 기존 smoothstep보다 좀더 스무스하다
+    return t*2.-1.; // 0~ 1
+}
+
+float osc(float playRate, float min, float max){
+    return (sin(u_time*playRate)*.5 + .5) * (max-min) + min;
+    // float d = max-min;
+}
+
+void lighter(vec2 c, float width, float height){
+    
+    vec2 coord_ = coord-c;
+    coord_.x += noise(coord_.y)*smoothstep(0., 0.8, coord_.y)*.03;//
+    vec3 color_;
+    
+    float border = .3;
+	
+    float space = 0.184;
+    float b = (1. - pow((coord_.x*width),2.*osc(30.,1., 1.1)))*height*border;
+    float t = (1. - pow((coord_.x*width), 2.12*osc(30.,1., 1.2)))*height*osc(30.,1., 1.01);
+	float rBot = smoothstep(b, b+space, coord_.y);
+    float rTop = smoothstep(t, t+space, coord_.y);
+    color_.rg = vec2(rBot - rTop);
+    color_.g /= 3.144;
+    // color_ += dot(color_.r,1.500);
+    
+    
+    if(coord_.y>=0.){
+    space = 0.184;
+    b = (1. - pow((coord_.x*width*1.5),2.*osc(30.,1., 1.1)))*height*.8*border;
+    t = (1. - pow((coord_.x*width), 2.12*osc(30.,1., 1.2)))*height*border*osc(30.,1., 1.01);
+    float bBot = smoothstep(b-space/3., b+space, coord_.y);
+    float bTop = smoothstep(t, t+space, coord_.y);
+    
+    color_.b = bBot - bTop;
+    color_.b /=4.536;
+    }
+    
+    color_ += dot(color_.r,1.036);
+    
+    gl_FragColor += vec4(color_ ,1.);    
+}
+
+void main( void ) {
+    coord  = gl_FragCoord.xy/u_resolution;
+    coord.y *= u_resolution.y/u_resolution.x;
+    
+    lighter(vec2(0.50,0.080), 12., 0.584*osc(1000., 0.9, 1.));
+}
+
