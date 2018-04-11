@@ -7,8 +7,6 @@ uniform vec2 u_mouse;
 uniform vec2 u_resolution;
 
 vec2 coord;
-void lighter(vec2 c, float a, float b);
-void light();
 
 float rand(float x){
     return fract(sin(x)*1e5);
